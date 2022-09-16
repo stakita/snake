@@ -1,11 +1,12 @@
 pub mod snake;
 // pub mod ui;
+use std::ptr;
 
 use crate::snake::state::State;
-use crate::snake::ui::init;
+use crate::snake::ui::{draw_screen, fini, init};
 
 // use ncurses;
-// use std::{thread, time};
+use std::{thread, time};
 
 fn main() {
     // println!("Hello, world!");
@@ -30,9 +31,20 @@ fn main() {
     // thread::sleep(time::Duration::from_millis(5000));
 
     // ncurses::endwin();
-    let state = State {
+
+    let mut state = State {
         width: 80,
         height: 24,
+        game_win: ptr::null_mut(),
     };
-    init(state);
+    state = init(state);
+    println!("new state: {:?}", state);
+
+    // println!("{}", '|' as u32);
+
+    state = draw_screen(state);
+
+    thread::sleep(time::Duration::from_millis(5000));
+
+    fini(state);
 }

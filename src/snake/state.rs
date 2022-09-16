@@ -1,5 +1,8 @@
+use ncurses::WINDOW;
+
 #[derive(Debug)]
 pub struct State {
-    pub width: u32,
-    pub height: u32,
+    pub width: i32,
+    pub height: i32,
+    pub game_win: WINDOW,
 }
