@@ -1,3 +1,3 @@
-pub mod ui;
+pub mod game;
 pub mod state;
-// pub mod game;
+pub mod ui;
