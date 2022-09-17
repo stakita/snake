@@ -4,7 +4,7 @@ use crate::snake::ui; //{draw_screen, fini, init};
 use rand::Rng;
 use std::{thread, time};
 
-pub fn init(mut state: State) {
+fn init(mut state: State) -> State {
     state = ui::init(state);
 
     state = place_snake(state);
@@ -12,9 +12,21 @@ pub fn init(mut state: State) {
 
     println!("state: {:?}", state);
 
+    state
+}
+
+fn fini(mut state: State) -> State {
+    state = ui::fini(state);
+    state
+}
+
+pub fn run() {
+    let mut state = State::new();
+    state = init(state);
     state = ui::draw_screen(state);
     thread::sleep(time::Duration::from_millis(5000));
-    state = ui::fini(state);
+
+    _ = fini(state);
 }
 
 fn place_snake(mut state: State) -> State {
