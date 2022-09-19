@@ -38,18 +38,20 @@ fn draw_box(
 
     let height = height + offset_y;
     let width = width + offset_x;
+    let base_x = offset_x;
+    let base_y = offset_y;
 
     for y in offset_y..height {
         for x in offset_x..width {
-            if x == 0 && y == 0 {
+            if x == base_x && y == base_y {
                 stdout
                     .queue(cursor::MoveTo(x, y))?
                     .queue(style::Print(edge_symbols.tl))?;
-            } else if x == 0 && y == height - 1 {
+            } else if x == base_x && y == height - 1 {
                 stdout
                     .queue(cursor::MoveTo(x, y))?
                     .queue(style::Print(edge_symbols.bl))?;
-            } else if x == width - 1 && y == 0 {
+            } else if x == width - 1 && y == base_y {
                 stdout
                     .queue(cursor::MoveTo(x, y))?
                     .queue(style::Print(edge_symbols.tr))?;
@@ -58,7 +60,7 @@ fn draw_box(
                     .queue(cursor::MoveTo(x, y))?
                     .queue(style::Print(edge_symbols.br))?;
             } else {
-                if x == 0 {
+                if x == base_x {
                     stdout
                         .queue(cursor::MoveTo(x, y))?
                         .queue(style::Print(edge_symbols.l))?;
@@ -66,7 +68,7 @@ fn draw_box(
                     stdout
                         .queue(cursor::MoveTo(x, y))?
                         .queue(style::Print(edge_symbols.r))?;
-                } else if y == 0 {
+                } else if y == base_y {
                     stdout
                         .queue(cursor::MoveTo(x, y))?
                         .queue(style::Print(edge_symbols.t))?;
@@ -87,8 +89,8 @@ fn main() -> Result<()> {
 
     stdout.execute(terminal::Clear(terminal::ClearType::All))?;
 
-    let w = 150;
-    let h = 40;
+    let w = 80;
+    let h = 24;
 
     _ = draw_box(w, h, 0, 0, EdgeSymbols::default());
 
