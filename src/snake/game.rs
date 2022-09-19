@@ -1,15 +1,13 @@
-use crate::snake::state::State;
-use crate::snake::ui; //{draw_screen, fini, init};
+use crate::snake::state::{Direction, State};
+use crate::snake::ui;
 
 use crossterm::cursor::position;
 use crossterm::event::{Event, EventStream, KeyCode};
 use futures::{FutureExt, StreamExt};
 use rand::Rng;
 use std::time::Duration;
-// use std::{thread, time};
 use tokio::select;
 use tokio::time::sleep;
-// use futures_timer::Delay;
 
 const TICK_MS: u64 = 200;
 
@@ -41,7 +39,10 @@ pub async fn run() {
         let event = reader.next().fuse();
 
         select! {
-            _ = delay => { println!(".\r"); },
+            _ = delay => {
+                state = run_turn(state);
+                state = ui::draw_screen(state);
+            },
             maybe_event = event => {
                 match maybe_event {
                     Some(Ok(event)) => {
@@ -65,8 +66,25 @@ pub async fn run() {
     _ = fini(state);
 }
 
+fn run_turn(mut state: State) -> State {
+    let next_head = next_snake_head(state.snake.get(0).unwrap().clone(), state.direction.clone());
+    state = move_snake(state, next_head);
+    state
+}
+
 fn place_snake(mut state: State) -> State {
     state.snake.push((state.width / 2, state.height / 2));
+    state
+}
+
+fn grow_snake(mut state: State, next_head: (i32, i32)) -> State {
+    state.snake.insert(0, next_head);
+    state
+}
+
+fn move_snake(mut state: State, next_head: (i32, i32)) -> State {
+    let _ = state.snake.pop();
+    state.snake.insert(0, next_head);
     state
 }
 
@@ -100,4 +118,18 @@ fn place_food(mut state: State) -> State {
 
 fn hits_snake(snake: &Box<Vec<(i32, i32)>>, location: (i32, i32)) -> bool {
     snake.contains(&location)
+}
+
+fn next_snake_head(current_head: (i32, i32), direction: Direction) -> (i32, i32) {
+    let head = current_head;
+    let mut x_delta = 0;
+    let mut y_delta = 0;
+    match direction {
+        Direction::UP => y_delta -= 1,
+        Direction::DOWN => y_delta += 1,
+        Direction::LEFT => x_delta -= 1,
+        Direction::RIGHT => x_delta += 1,
+    }
+
+    (head.0 + x_delta, head.1 + y_delta)
 }

@@ -50,7 +50,7 @@ pub fn draw_screen(state: State) -> State {
     //     ExNcurses.refresh()
 
     // We can't hide the cursor on macos, so just park it in the corner
-    ncurses::wmove(state.game_win, 0, 0);
+    // ncurses::wmove(state.game_win, 0, 0);
 
     ncurses::refresh();
     //     ExNcurses.wrefresh(state.game_win)
