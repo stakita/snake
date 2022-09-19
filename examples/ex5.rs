@@ -4,8 +4,9 @@
 
 use std::{io::stdout, time::Duration};
 
-use futures::{future::FutureExt, select, StreamExt};
-use futures_timer::Delay;
+use futures::{future::FutureExt, StreamExt};
+use tokio::select;
+use tokio::time::sleep;
 
 use crossterm::{
     cursor::position,
@@ -26,8 +27,8 @@ async fn print_events() {
     let mut reader = EventStream::new();
 
     loop {
-        let mut delay = Delay::new(Duration::from_millis(1_000)).fuse();
-        let mut event = reader.next().fuse();
+        let delay = sleep(Duration::from_millis(1_000));
+        let event = reader.next().fuse();
 
         select! {
             _ = delay => { println!(".\r"); },
