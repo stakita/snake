@@ -1,12 +1,17 @@
 use crate::snake::state::State;
 use crate::snake::ui; //{draw_screen, fini, init};
 
+use crossterm::cursor::position;
+use crossterm::event::{Event, EventStream, KeyCode};
+use futures::{FutureExt, StreamExt};
 use rand::Rng;
-// use std::time::Duration;
-use std::{thread, time};
-// use tokio::time::sleep;
+use std::time::Duration;
+// use std::{thread, time};
+use tokio::select;
+use tokio::time::sleep;
+// use futures_timer::Delay;
 
-// const TICK: u64 = 200;
+const TICK_MS: u64 = 200;
 
 fn init(mut state: State) -> State {
     state = ui::init(state);
@@ -24,18 +29,38 @@ fn fini(mut state: State) -> State {
     state
 }
 
-pub fn run() {
+pub async fn run() {
     let mut state = State::new();
     state = init(state);
     state = ui::draw_screen(state);
 
-    // let tick_generator = async move {
-    //     loop {
-    //         sleep(Duration::from_millis(TICK)).await;
-    //     }
-    // };
+    let mut reader = EventStream::new();
 
-    thread::sleep(time::Duration::from_millis(5000));
+    loop {
+        let delay = sleep(Duration::from_millis(TICK_MS));
+        let event = reader.next().fuse();
+
+        select! {
+            _ = delay => { println!(".\r"); },
+            maybe_event = event => {
+                match maybe_event {
+                    Some(Ok(event)) => {
+                        println!("Event::{:?}\r", event);
+
+                        if event == Event::Key(KeyCode::Char('c').into()) {
+                            println!("Cursor position: {:?}\r", position());
+                        }
+
+                        if event == Event::Key(KeyCode::Esc.into()) {
+                            break;
+                        }
+                    }
+                    Some(Err(e)) => println!("Error: {:?}\r", e),
+                    None => break,
+                }
+            }
+        };
+    }
 
     _ = fini(state);
 }
