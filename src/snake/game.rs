@@ -2,7 +2,11 @@ use crate::snake::state::State;
 use crate::snake::ui; //{draw_screen, fini, init};
 
 use rand::Rng;
+use std::time::Duration;
 use std::{thread, time};
+use tokio::{select, time::sleep};
+
+const TICK: u64 = 200;
 
 fn init(mut state: State) -> State {
     state = ui::init(state);
@@ -24,6 +28,13 @@ pub fn run() {
     let mut state = State::new();
     state = init(state);
     state = ui::draw_screen(state);
+
+    let tick_generator = async move {
+        loop {
+            sleep(Duration::from_millis(TICK)).await;
+        }
+    };
+
     thread::sleep(time::Duration::from_millis(5000));
 
     _ = fini(state);
