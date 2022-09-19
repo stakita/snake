@@ -52,7 +52,8 @@ async fn print_events() {
     }
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     println!("{}", HELP);
 
     enable_raw_mode()?;
@@ -60,7 +61,7 @@ fn main() -> Result<()> {
     let mut stdout = stdout();
     execute!(stdout, EnableMouseCapture)?;
 
-    async_std::task::block_on(print_events());
+    print_events().await;
 
     execute!(stdout, DisableMouseCapture)?;
 
