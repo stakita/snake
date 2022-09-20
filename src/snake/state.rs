@@ -17,6 +17,7 @@ pub struct State {
     pub snake: Box<Vec<(i32, i32)>>,
     pub direction: Direction,
     pub food: Option<(i32, i32)>,
+    pub game_over: bool,
     pub score: i32,
 }
 
@@ -29,6 +30,7 @@ impl State {
             snake: Box::new(Vec::new()),
             direction: Direction::DOWN,
             food: None,
+            game_over: false,
             score: 0,
         }
     }

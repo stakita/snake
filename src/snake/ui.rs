@@ -24,6 +24,14 @@ pub fn fini(state: State) -> State {
     state
 }
 
+pub fn game_over(state: State) -> State {
+    center_text(&state, " GAME OVER ");
+    ncurses::refresh();
+    // TODO: do we need to flush anything here??
+    // flush_input();
+    state
+}
+
 pub fn draw_screen(state: State) -> State {
     //   def draw_screen(state) do
     //     ExNcurses.clear()
@@ -87,6 +95,12 @@ fn draw_snake(state: &State) {
         ncurses::waddstr(state.game_win, "#");
     }
     // draw_snake(state, rest)
+}
+
+fn center_text(state: &State, text: &str) {
+    let y = state.height / 2;
+    let x = (state.width - text.chars().count() as i32) / 2;
+    ncurses::mvaddstr(y, x, text);
 }
 
 fn update_score(state: State) -> State {

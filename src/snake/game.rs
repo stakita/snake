@@ -39,14 +39,17 @@ pub async fn run() {
 
         select! {
             _ = interval_stream.next() => {
-                state = run_turn(state);
-                state = ui::draw_screen(state);
+                if !state.game_over {
+                    state = run_turn(state);
+                    state = ui::draw_screen(state);
+                }
+                if state.game_over {
+                    state = ui::game_over(state);
+                }
             },
             maybe_event = event => {
                 match maybe_event {
                     Some(Ok(event)) => {
-                        // println!("Event::{:?}\r", event);
-
                         // TODO: could probably filter on event class prior to dispatching the event - all events go down to the handler logic!
                         state = handle_key(state, event);
 
@@ -65,16 +68,16 @@ pub async fn run() {
 }
 
 fn handle_key(mut state: State, key: Event) -> State {
-    if key == Event::Key(KeyCode::Up.into()) {
+    if key == Event::Key(KeyCode::Up.into()) && state.direction != Direction::DOWN {
         state.direction = Direction::UP;
     };
-    if key == Event::Key(KeyCode::Down.into()) {
+    if key == Event::Key(KeyCode::Down.into()) && state.direction != Direction::UP {
         state.direction = Direction::DOWN;
     };
-    if key == Event::Key(KeyCode::Left.into()) {
+    if key == Event::Key(KeyCode::Left.into()) && state.direction != Direction::RIGHT {
         state.direction = Direction::LEFT;
     };
-    if key == Event::Key(KeyCode::Right.into()) {
+    if key == Event::Key(KeyCode::Right.into()) && state.direction != Direction::LEFT {
         state.direction = Direction::RIGHT;
     };
     state
@@ -82,6 +85,17 @@ fn handle_key(mut state: State, key: Event) -> State {
 
 fn run_turn(mut state: State) -> State {
     let next_head = next_snake_head(state.snake.get(0).unwrap().clone(), state.direction.clone());
+
+    if loses(&state, next_head) {
+        state.game_over = true;
+    }
+
+    if hits_food(&state, next_head) {
+        state = grow_snake(state, next_head);
+        state = place_food(state);
+        state = incr_score(state);
+    }
+
     state = move_snake(state, next_head);
     state
 }
@@ -93,6 +107,11 @@ fn place_snake(mut state: State) -> State {
 
 fn grow_snake(mut state: State, next_head: (i32, i32)) -> State {
     state.snake.insert(0, next_head);
+    state
+}
+
+fn incr_score(mut state: State) -> State {
+    state.score += 1;
     state
 }
 
@@ -130,8 +149,23 @@ fn place_food(mut state: State) -> State {
     state
 }
 
+fn loses(state: &State, next_head: (i32, i32)) -> bool {
+    hits_wall(state, next_head) || hits_snake(&state.snake, next_head)
+}
+
+fn hits_wall(state: &State, next_head: (i32, i32)) -> bool {
+    next_head.0 == 0
+        || next_head.1 == 0
+        || next_head.0 == state.width - 1
+        || next_head.1 == state.height - 2
+}
+
 fn hits_snake(snake: &Box<Vec<(i32, i32)>>, location: (i32, i32)) -> bool {
     snake.contains(&location)
+}
+
+fn hits_food(state: &State, next_head: (i32, i32)) -> bool {
+    state.food.unwrap() == next_head
 }
 
 fn next_snake_head(current_head: (i32, i32), direction: Direction) -> (i32, i32) {
