@@ -1,13 +1,13 @@
 use crate::snake::state::{Direction, State};
 use crate::snake::ui;
 
-use crossterm::cursor::position;
 use crossterm::event::{Event, EventStream, KeyCode};
 use futures::{FutureExt, StreamExt};
 use rand::Rng;
 use std::time::Duration;
 use tokio::select;
-use tokio::time::sleep;
+use tokio::time;
+use tokio_stream::wrappers::IntervalStream;
 
 const TICK_MS: u64 = 200;
 
@@ -16,8 +16,6 @@ fn init(mut state: State) -> State {
 
     state = place_snake(state);
     state = place_food(state);
-
-    println!("state: {:?}", state);
 
     state
 }
@@ -32,29 +30,29 @@ pub async fn run() {
     state = init(state);
     state = ui::draw_screen(state);
 
+    let interval = time::interval(Duration::from_millis(TICK_MS));
+    let mut interval_stream = IntervalStream::new(interval);
     let mut reader = EventStream::new();
 
     loop {
-        let delay = sleep(Duration::from_millis(TICK_MS));
         let event = reader.next().fuse();
 
         select! {
-            _ = delay => {
+            _ = interval_stream.next() => {
                 state = run_turn(state);
                 state = ui::draw_screen(state);
             },
             maybe_event = event => {
                 match maybe_event {
                     Some(Ok(event)) => {
-                        println!("Event::{:?}\r", event);
+                        // println!("Event::{:?}\r", event);
 
-                        if event == Event::Key(KeyCode::Char('c').into()) {
-                            println!("Cursor position: {:?}\r", position());
-                        }
+                        // TODO: could probably filter on event class prior to dispatching the event - all events go down to the handler logic!
+                        state = handle_key(state, event);
 
-                        if event == Event::Key(KeyCode::Esc.into()) {
-                            break;
-                        }
+                        // if event == Event::Key(KeyCode::Esc.into()) {
+                        //     break;
+                        // }
                     }
                     Some(Err(e)) => println!("Error: {:?}\r", e),
                     None => break,
@@ -64,6 +62,22 @@ pub async fn run() {
     }
 
     _ = fini(state);
+}
+
+fn handle_key(mut state: State, key: Event) -> State {
+    if key == Event::Key(KeyCode::Up.into()) {
+        state.direction = Direction::UP;
+    };
+    if key == Event::Key(KeyCode::Down.into()) {
+        state.direction = Direction::DOWN;
+    };
+    if key == Event::Key(KeyCode::Left.into()) {
+        state.direction = Direction::LEFT;
+    };
+    if key == Event::Key(KeyCode::Right.into()) {
+        state.direction = Direction::RIGHT;
+    };
+    state
 }
 
 fn run_turn(mut state: State) -> State {
