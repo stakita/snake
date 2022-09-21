@@ -4,7 +4,6 @@ use ncurses;
 use std::io::{stdout, Write};
 
 pub fn init(state: State) -> State {
-    let _ = &println!("state: {:?}", state);
     ncurses::initscr();
 
     let win = ncurses::newwin(state.height - 1, state.width, 1, 0);
