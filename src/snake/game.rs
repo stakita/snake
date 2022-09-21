@@ -77,17 +77,29 @@ pub async fn run() {
     _ = fini(state);
 }
 
-fn handle_key(mut state: State, key: Event) -> State {
-    if key == Event::Key(KeyCode::Up.into()) && state.previous != Direction::DOWN {
+fn handle_key(mut state: State, key: &Event) -> State {
+    if key == &Event::Key(KeyCode::Up.into())
+        && state.previous != Direction::DOWN
+        && state.previous != Direction::UP
+    {
         state.direction = Direction::UP;
     };
-    if key == Event::Key(KeyCode::Down.into()) && state.previous != Direction::UP {
+    if key == &Event::Key(KeyCode::Down.into())
+        && state.previous != Direction::UP
+        && state.previous != Direction::DOWN
+    {
         state.direction = Direction::DOWN;
     };
-    if key == Event::Key(KeyCode::Left.into()) && state.previous != Direction::RIGHT {
+    if key == &Event::Key(KeyCode::Left.into())
+        && state.previous != Direction::RIGHT
+        && state.previous != Direction::LEFT
+    {
         state.direction = Direction::LEFT;
     };
-    if key == Event::Key(KeyCode::Right.into()) && state.previous != Direction::LEFT {
+    if key == &Event::Key(KeyCode::Right.into())
+        && state.previous != Direction::LEFT
+        && state.previous != Direction::RIGHT
+    {
         state.direction = Direction::RIGHT;
     };
     state
