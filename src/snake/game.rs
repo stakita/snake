@@ -60,11 +60,12 @@ pub async fn run() {
                 match maybe_event {
                     Some(Ok(event)) => {
                         // TODO: could probably filter on event class prior to dispatching the event - all events go down to the handler logic!
-                        state = handle_key(state, event);
+                        state = handle_key(state, &event);
 
-                        // if event == Event::Key(KeyCode::Esc.into()) {
-                        //     break;
-                        // }
+                        // Exit if 'q' or Esc is pressed
+                        if event == Event::Key(KeyCode::Esc.into()) || event == Event::Key(KeyCode::Char('q').into()) {
+                            break;
+                        }
                     }
                     Some(Err(e)) => println!("Error: {:?}\r", e),
                     None => break,
