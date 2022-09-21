@@ -9,7 +9,7 @@ use tokio::select;
 use tokio::time;
 use tokio_stream::wrappers::IntervalStream;
 
-const TICK_MS: u64 = 200;
+const TICK_MS: u64 = 500;
 
 fn init(mut state: State) -> State {
     state = ui::init(state);
@@ -68,16 +68,16 @@ pub async fn run() {
 }
 
 fn handle_key(mut state: State, key: Event) -> State {
-    if key == Event::Key(KeyCode::Up.into()) && state.direction != Direction::DOWN {
+    if key == Event::Key(KeyCode::Up.into()) && state.previous != Direction::DOWN {
         state.direction = Direction::UP;
     };
-    if key == Event::Key(KeyCode::Down.into()) && state.direction != Direction::UP {
+    if key == Event::Key(KeyCode::Down.into()) && state.previous != Direction::UP {
         state.direction = Direction::DOWN;
     };
-    if key == Event::Key(KeyCode::Left.into()) && state.direction != Direction::RIGHT {
+    if key == Event::Key(KeyCode::Left.into()) && state.previous != Direction::RIGHT {
         state.direction = Direction::LEFT;
     };
-    if key == Event::Key(KeyCode::Right.into()) && state.direction != Direction::LEFT {
+    if key == Event::Key(KeyCode::Right.into()) && state.previous != Direction::LEFT {
         state.direction = Direction::RIGHT;
     };
     state
@@ -86,17 +86,17 @@ fn handle_key(mut state: State, key: Event) -> State {
 fn run_turn(mut state: State) -> State {
     let next_head = next_snake_head(state.snake.get(0).unwrap().clone(), state.direction.clone());
 
+    state.previous = state.direction.clone();
+
     if loses(&state, next_head) {
         state.game_over = true;
-    }
-
-    if hits_food(&state, next_head) {
+    } else if hits_food(&state, next_head) {
         state = grow_snake(state, next_head);
         state = place_food(state);
         state = incr_score(state);
+    } else {
+        state = move_snake(state, next_head);
     }
-
-    state = move_snake(state, next_head);
     state
 }
 
