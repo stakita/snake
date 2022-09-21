@@ -144,18 +144,6 @@ fn move_snake(mut state: State, next_head: (i32, i32)) -> State {
 }
 
 fn place_food(mut state: State) -> State {
-    // let location = (
-    //     rand::thread_rng().gen_range(1..=state.width - 2),
-    //     rand::thread_rng().gen_range(1..=state.height - 2),
-    // );
-
-    // if hits_snake(state.snake, location) {
-    //     place_food(state)
-    // } else {
-    //     state.food = Some(location);
-    //     state
-    // }
-
     let mut done: bool = false;
     while !done {
         let location = (
