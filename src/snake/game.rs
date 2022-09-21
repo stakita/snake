@@ -9,7 +9,7 @@ use tokio::select;
 use tokio::time;
 use tokio_stream::wrappers::IntervalStream;
 
-const TICK_MS: u64 = 500;
+const TICK_MS: u64 = 200;
 
 fn init(mut state: State) -> State {
     state = ui::init(state);
