@@ -4,6 +4,7 @@ use crate::snake::ui;
 use crossterm::event::{Event, EventStream, KeyCode};
 use futures::{FutureExt, StreamExt};
 use rand::Rng;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::select;
 use tokio::time;
@@ -12,6 +13,14 @@ use tokio_stream::wrappers::IntervalStream;
 const TICK_MS: u64 = 200;
 
 fn init(mut state: State) -> State {
+    let done_clone = Arc::clone(&state.done);
+
+    ctrlc::set_handler(move || {
+        let mut val = done_clone.lock().unwrap();
+        *val = true;
+    })
+    .expect("Error setting Ctrl-C handler");
+
     state = ui::init(state);
 
     state = place_snake(state);
@@ -34,7 +43,7 @@ pub async fn run() {
     let mut interval_stream = IntervalStream::new(interval);
     let mut reader = EventStream::new();
 
-    loop {
+    while !*state.done.lock().unwrap() {
         let event = reader.next().fuse();
 
         select! {

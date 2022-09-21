@@ -1,6 +1,7 @@
 use crate::snake::state::State;
-
+use ansi_escapes;
 use ncurses;
+use std::io::{stdout, Write};
 
 pub fn init(state: State) -> State {
     let _ = &println!("state: {:?}", state);
@@ -12,6 +13,12 @@ pub fn init(state: State) -> State {
     ncurses::noecho();
     ncurses::keypad(win, true);
     ncurses::curs_set(ncurses::CURSOR_VISIBILITY::CURSOR_INVISIBLE); // This actually doesn't work for some reason
+    let mut stdout = stdout();
+
+    // let _ = stdout.write(b"\x1B[25l");
+    let code_str = format!("{}", ansi_escapes::CursorHide);
+    let _ = stdout.write(&code_str.as_bytes().to_vec());
+    let _ = stdout.flush();
 
     State {
         game_win: win,
@@ -21,6 +28,10 @@ pub fn init(state: State) -> State {
 
 pub fn fini(state: State) -> State {
     ncurses::endwin();
+    let mut stdout = stdout();
+    let code_str = format!("{}", ansi_escapes::CursorShow);
+    let _ = stdout.write(&code_str.as_bytes().to_vec());
+    let _ = stdout.flush();
     state
 }
 

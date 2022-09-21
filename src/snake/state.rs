@@ -1,5 +1,8 @@
 use ncurses::WINDOW;
-use std::ptr;
+use std::{
+    ptr,
+    sync::{Arc, Mutex},
+};
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Direction {
@@ -20,6 +23,7 @@ pub struct State {
     pub food: Option<(i32, i32)>,
     pub game_over: bool,
     pub score: i32,
+    pub done: Arc<Mutex<bool>>,
 }
 
 impl State {
@@ -34,6 +38,7 @@ impl State {
             food: None,
             game_over: false,
             score: 0,
+            done: Arc::new(Mutex::new(false)),
         }
     }
 }
