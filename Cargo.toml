@@ -6,17 +6,18 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+ansi-escapes = "0"
+crossterm = { version = "0.25", features = ["default", "event-stream"] }
+ctrlc = "3"
+futures = "0.3"
 ncurses = "5"
 rand = "0.8"
-
-# examples dependencies
-crossterm = { version = "0.25", features = ["default", "event-stream"] }
-futures = "0.3"
 tokio = { version = "1.21", features = ["full"] }
 tokio-stream = "0.1"
-tui = "0.19"
+
+[dev-dependencies]
+# dependencies for examples
 futures-util = "0.3"
 rustyline-async = "0.2"
+tui = "0.19"
 
-ansi-escapes = "0"
-ctrlc = "3"
