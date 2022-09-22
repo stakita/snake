@@ -1,6 +1,7 @@
 [package]
 name = "snake"
 version = "0.1.0"
+authors = ["Simon Takita <smtakita@gmail.com>"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -14,10 +15,14 @@ ncurses = "5"
 rand = "0.8"
 tokio = { version = "1.21", features = ["full"] }
 tokio-stream = "0.1"
+# log = "0.4"
+# log4rs = "1.1"
 
 [dev-dependencies]
 # dependencies for examples
 futures-util = "0.3"
 rustyline-async = "0.2"
 tui = "0.19"
+log = "0.4"
+log4rs = "1.1"
 
