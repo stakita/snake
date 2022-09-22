@@ -29,15 +29,19 @@ fn hide_cursor() {
     // ncurses::curs_set doesn't work for some reason
     // Replacing with manual ansi escape code
     let mut stdout = stdout();
-    let _ = stdout.write(&format!("{}", ansi_escapes::CursorHide).as_bytes().to_vec());
-    let _ = stdout.flush();
+    let _ = stdout
+        .write(&format!("{}", ansi_escapes::CursorHide).as_bytes().to_vec())
+        .expect("Could not write to stdout");
+    let _ = stdout.flush().expect("Could not flush stdout");
 }
 
 // TODO: handle error instead of suppressing
 fn show_cursor() {
     let mut stdout = stdout();
-    let _ = stdout.write(&format!("{}", ansi_escapes::CursorShow).as_bytes().to_vec());
-    let _ = stdout.flush();
+    let _ = stdout
+        .write(&format!("{}", ansi_escapes::CursorShow).as_bytes().to_vec())
+        .expect("Could not write to stdout");
+    let _ = stdout.flush().expect("Could not flush stdout");
 }
 
 pub fn game_over(state: &State) {
