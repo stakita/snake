@@ -9,14 +9,11 @@ use log4rs::{
 fn main() -> Result<(), SetLoggerError> {
     let level = log::LevelFilter::Trace;
     let file_path = "./foo.log";
-
     let logfile = FileAppender::builder().build(file_path).unwrap();
-
     let config = Config::builder()
         .appender(Appender::builder().build("logfile", Box::new(logfile)))
         .build(Root::builder().appender("logfile").build(level))
         .unwrap();
-
     let _handle = log4rs::init_config(config)?;
 
     error!("Goes to file 1");
