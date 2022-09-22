@@ -13,10 +13,10 @@ use tokio_stream::wrappers::IntervalStream;
 const TICK_MS: u64 = 200;
 
 fn init(mut state: State) -> State {
-    let done_clone = Arc::clone(&state.done);
+    let done = Arc::clone(&state.done);
 
     ctrlc::set_handler(move || {
-        let mut val = done_clone.lock().unwrap();
+        let mut val = done.lock().unwrap();
         *val = true;
     })
     .expect("Error setting Ctrl-C handler");
@@ -29,15 +29,14 @@ fn init(mut state: State) -> State {
     state
 }
 
-fn fini(mut state: State) -> State {
-    state = ui::fini(state);
-    state
+fn finish() {
+    ui::finish();
 }
 
 pub async fn run() {
     let mut state = State::new();
     state = init(state);
-    state = ui::draw_screen(state);
+    ui::draw_screen(&state);
 
     let interval = time::interval(Duration::from_millis(TICK_MS));
     let mut interval_stream = IntervalStream::new(interval);
@@ -50,10 +49,10 @@ pub async fn run() {
             _ = interval_stream.next() => {
                 if !state.game_over {
                     state = run_turn(state);
-                    state = ui::draw_screen(state);
+                    ui::draw_screen(&state);
                 }
                 if state.game_over {
-                    state = ui::game_over(state);
+                    ui::game_over(&state);
                 }
             },
             maybe_event = event => {
@@ -74,7 +73,7 @@ pub async fn run() {
         };
     }
 
-    _ = fini(state);
+    finish();
 }
 
 fn handle_key(mut state: State, key: &Event) -> State {

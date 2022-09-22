@@ -19,10 +19,9 @@ pub fn init(state: State) -> State {
     }
 }
 
-pub fn fini(state: State) -> State {
+pub fn finish() {
     ncurses::endwin();
     show_cursor();
-    state
 }
 
 // TODO: handle error instead of suppressing
@@ -41,15 +40,12 @@ fn show_cursor() {
     let _ = stdout.flush();
 }
 
-pub fn game_over(state: State) -> State {
+pub fn game_over(state: &State) {
     center_text(&state, " GAME OVER ");
     ncurses::refresh();
-    // TODO: do we need to flush anything here??
-    // flush_input();
-    state
 }
 
-pub fn draw_screen(state: State) -> State {
+pub fn draw_screen(state: &State) {
     ncurses::clear();
     ncurses::mvaddstr(0, 2, "Snake");
     ncurses::wclear(state.game_win);
@@ -64,13 +60,12 @@ pub fn draw_screen(state: State) -> State {
         '+' as u32,
         '+' as u32,
     );
-    let state = update_score(state);
-    draw_snake(&state);
-    draw_food(&state);
+    update_score(state);
+    draw_snake(state);
+    draw_food(state);
 
     ncurses::refresh();
     ncurses::wrefresh(state.game_win);
-    state
 }
 
 fn draw_food(state: &State) {
@@ -94,8 +89,7 @@ fn center_text(state: &State, text: &str) {
     ncurses::mvaddstr(y, x, text);
 }
 
-fn update_score(state: State) -> State {
+fn update_score(state: &State) {
     let score_str = format!("Score: {}", state.score);
     ncurses::mvaddstr(0, state.width - 20, &score_str);
-    state
 }
