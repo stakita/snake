@@ -2,11 +2,11 @@
 
 This project is an implementation of Snake in Rust. Mostly a testbed for playing around with a few libraries in the Rust ecosystem.
 
-<a href="https://asciinema.org/a/523037" target="_blank"><img src="https://asciinema.org/a/523037.svg" alt="Demo image"></a>
+[![asciicast](./assets/demo.gif)](https://asciinema.org/a/523037)
 
 ## Running
 
-This is a binary Cargo crate. You can run it from a local clone of the respository by running:
+This is a binary Cargo crate. You can run it from a local clone of the repository by running:
 
 ```
 cargo run
