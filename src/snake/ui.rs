@@ -50,7 +50,7 @@ pub fn game_over(state: &State) {
 }
 
 pub fn draw_screen(state: &State) {
-    ncurses::clear();
+    ncurses::erase();
     ncurses::mvaddstr(0, 2, "Snake");
     ncurses::wclear(state.game_win);
     ncurses::wborder(
