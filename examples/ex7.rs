@@ -14,26 +14,64 @@ use tokio_stream::wrappers::IntervalStream;
 
 const TICK_MS: u64 = 200;
 
-// fn init(mut state: Arc<std::sync::Mutex<State>>) {
-//     let done = Arc::clone(&state.lock().unwrap().done);
+#[derive(Debug)]
+pub struct State {
+    pub width: Arc<Mutex<i32>>,
+    pub height: Arc<Mutex<i32>>,
+    // pub game_win: WINDOW,
+    pub snake: Box<Vec<(i32, i32)>>,
+    // pub direction: Direction,
+    // pub previous: Direction,
+    pub food: Option<(i32, i32)>,
+    pub game_over: bool,
+    pub score: i32,
+    pub done: Arc<Mutex<bool>>,
+}
 
-//     ctrlc::set_handler(move || {
-//         let mut val = done.lock().unwrap();
-//         *val = true;
-//     })
-//     .expect("Error setting Ctrl-C handler");
+impl State {
+    pub fn new() -> State {
+        State {
+            width: Arc::new(Mutex::new(80)),
+            height: Arc::new(Mutex::new(24)),
+            // game_win: ptr::null_mut(),
+            snake: Box::new(Vec::new()),
+            // direction: Direction::DOWN,
+            // previous: Direction::DOWN,
+            food: None,
+            game_over: false,
+            score: 0,
+            done: Arc::new(Mutex::new(false)),
+        }
+    }
+}
 
-//     // state = ui::init(state);
+fn init(state: Arc<std::sync::Mutex<State>>) {
+    println!("init - start");
 
-//     place_snake(&state);
-//     state = place_food(state);
-// }
+    let mut state = state.lock().unwrap();
+
+    // let done = Arc::clone(&state.lock().unwrap().done);
+
+    // ctrlc::set_handler(move || {
+    //     let mut val = done.lock().unwrap();
+    //     *val = true;
+    // })
+    // .expect("Error setting Ctrl-C handler");
+
+    // state = ui::init(state);
+
+    state = place_snake(state);
+    state = place_food(state);
+    println!("init - end");
+    // state
+}
 
 // fn finish() {
 //     // ui::finish();
 // }
 
-pub async fn ticker(state: Arc<Mutex<i32>>) {
+pub async fn ticker(state: Arc<Mutex<State>>) {
+    println!("ticker - start");
     let interval = time::interval(Duration::from_millis(TICK_MS * 2));
     let mut interval_stream = IntervalStream::new(interval);
 
@@ -43,10 +81,11 @@ pub async fn ticker(state: Arc<Mutex<i32>>) {
 
     // while !*state.done.lock().unwrap() {
     while !done {
+        println!("ticker - loop");
         interval_stream.next().await;
         let mut val = state.lock().unwrap();
-        *val += 1;
-        println!("tick - val: {}", *val);
+        val.score += 1;
+        println!("tick - val: {}", val.score);
         // if !state.lock().clone().game_over {
         //     state = run_turn(state);
         //     // ui::draw_screen(&state);
@@ -56,31 +95,38 @@ pub async fn ticker(state: Arc<Mutex<i32>>) {
         //     // ui::game_over(&state);
         //     println!("game_over");
         // }
+        println!("ticker - loop end");
     }
 }
 
 pub async fn run() {
-    // let mut state = Arc::new(Mutex::new(State::new()));
-    let state = Arc::new(Mutex::new(0));
-    // init(state);
+    println!("run - start");
+
+    let mut state = Arc::new(Mutex::new(State::new()));
+    let state_clone = Arc::clone(&state);
+    init(state_clone);
     // ui::draw_screen(&state);
 
+    println!("run - 1");
     let interval = time::interval(Duration::from_millis(TICK_MS));
     let mut interval_stream = IntervalStream::new(interval);
     // let mut reader = EventStream::new();
 
+    println!("run - 2");
     let state_clone = Arc::clone(&state);
-    let handle = tokio::spawn(async move {
+    tokio::spawn(async move {
         ticker(state_clone).await;
     });
 
+    println!("run - 3");
     let done = false;
     // while !*state.done.lock().unwrap() {
     while !done {
+        println!("run - loop");
         interval_stream.next().await;
         let mut val = state.lock().unwrap();
-        *val += 1000;
-        println!("1 -- tick - val: {}", *val);
+        val.score += 1000;
+        println!("1 -- tick - val: {}", val.score);
         // if !state.game_over {
         //     state = run_turn(state);
         //     // ui::draw_screen(&state);
@@ -121,6 +167,7 @@ pub async fn run() {
         //         }
         //     }
         // };
+        println!("run - loop end");
     }
 
     // finish();
@@ -175,10 +222,29 @@ pub async fn run() {
 //     state
 // }
 
-// fn place_snake(mut state: Arc<std::sync::Mutex<State>>) {
-//     state = state.lock().unwrap();
-//     state.snake.push((state.width / 2, state.height / 2));
-// }
+fn place_snake(mut state: std::sync::MutexGuard<'_, State>) -> std::sync::MutexGuard<'_, State> {
+    // let done = &state.lock().unwrap();
+    println!("place_snake - start");
+    // let mut state = state.lock().unwrap();
+    // // println!("place_snake - 1");
+    // // let width = &state.lock().unwrap().width;
+    // // println!("place_snake - 2");
+    // // let height = &state.lock().unwrap().height;
+
+    // // state_inner
+    // //     .snake
+    // //     .push((state_inner.width / 2, state_inner.height / 2));
+    // println!("place_snake - 3");
+
+    // state.snake.push((state.width / 2, &state.height / 2));
+    let height = *state.height.lock().unwrap();
+    let width = *state.width.lock().unwrap();
+
+    state.snake.push((width / 2, height / 2));
+    println!("place_snake - end");
+
+    state
+}
 
 // fn grow_snake(mut state: State, next_head: (i32, i32)) -> State {
 //     state.snake.insert(0, next_head);
@@ -196,21 +262,23 @@ pub async fn run() {
 //     state
 // }
 
-// fn place_food(mut state: State) -> State {
-//     let mut done: bool = false;
-//     while !done {
-//         let location = (
-//             rand::thread_rng().gen_range(1..=state.width - 2),
-//             rand::thread_rng().gen_range(1..=state.height - 3),
-//         );
+fn place_food(mut state: std::sync::MutexGuard<'_, State>) -> std::sync::MutexGuard<'_, State> {
+    let mut done: bool = false;
+    let height = *state.height.lock().unwrap();
+    let width = *state.width.lock().unwrap();
+    while !done {
+        let location = (
+            rand::thread_rng().gen_range(1..=width - 2),
+            rand::thread_rng().gen_range(1..=height - 3),
+        );
 
-//         if !hits_snake(&state.snake, location) {
-//             state.food = Some(location);
-//             done = true;
-//         }
-//     }
-//     state
-// }
+        if !hits_snake(&state.snake, location) {
+            state.food = Some(location);
+            done = true;
+        }
+    }
+    state
+}
 
 // fn loses(state: &State, next_head: (i32, i32)) -> bool {
 //     hits_wall(state, next_head) || hits_snake(&state.snake, next_head)
@@ -223,9 +291,9 @@ pub async fn run() {
 //         || next_head.1 == state.height - 2
 // }
 
-// fn hits_snake(snake: &Box<Vec<(i32, i32)>>, location: (i32, i32)) -> bool {
-//     snake.contains(&location)
-// }
+fn hits_snake(snake: &Box<Vec<(i32, i32)>>, location: (i32, i32)) -> bool {
+    snake.contains(&location)
+}
 
 // fn hits_food(state: &State, next_head: (i32, i32)) -> bool {
 //     state.food.unwrap() == next_head
