@@ -11,7 +11,7 @@ use tokio_stream::wrappers::IntervalStream;
 
 const TICK_MS: u64 = 200;
 
-pub enum MyEvent {
+pub enum GameEvent {
     Tick,
     Keypress(Event),
 }
@@ -29,7 +29,7 @@ fn finish() {
     ui::finish();
 }
 
-pub async fn ticker(event_channel: Sender<MyEvent>) {
+pub async fn ticker(event_channel: Sender<GameEvent>) {
     let interval = time::interval(Duration::from_millis(TICK_MS));
     let mut interval_stream = IntervalStream::new(interval);
 
@@ -37,11 +37,11 @@ pub async fn ticker(event_channel: Sender<MyEvent>) {
     while !done {
         interval_stream.next().await;
         // Todo: handle errors on send
-        let _ = event_channel.send(MyEvent::Tick).await;
+        let _ = event_channel.send(GameEvent::Tick).await;
     }
 }
 
-pub async fn keyboard(event_channel: Sender<MyEvent>) {
+pub async fn keyboard(event_channel: Sender<GameEvent>) {
     let mut reader = EventStream::new();
 
     let done = false;
@@ -51,7 +51,7 @@ pub async fn keyboard(event_channel: Sender<MyEvent>) {
         match maybe_event {
             Some(Ok(event)) => {
                 // Todo: handle errors on send
-                let _ = event_channel.send(MyEvent::Keypress(event)).await;
+                let _ = event_channel.send(GameEvent::Keypress(event)).await;
             }
             Some(Err(e)) => println!("Error: {:?}\r", e),
             None => break,
@@ -79,7 +79,7 @@ pub async fn run() {
     while !done {
         let element = rx.recv().await.unwrap();
         match element {
-            MyEvent::Keypress(event) => {
+            GameEvent::Keypress(event) => {
                 state = handle_key(state, &event);
 
                 // Exit if 'q' or Esc is pressed
@@ -89,7 +89,7 @@ pub async fn run() {
                     break;
                 }
             }
-            MyEvent::Tick => {
+            GameEvent::Tick => {
                 if !state.game_over {
                     state = run_turn(state);
                     ui::draw_screen(&state);
