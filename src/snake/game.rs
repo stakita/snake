@@ -14,6 +14,7 @@ const TICK_MS: u64 = 200;
 pub enum GameEvent {
     Tick,
     Keypress(Event),
+    Exit,
 }
 
 fn init(mut state: State) -> State {
@@ -66,6 +67,13 @@ pub async fn run() {
 
     let (tx0, mut rx) = mpsc::channel(10);
     let tx1 = tx0.clone();
+    let tx2 = tx0.clone();
+
+    ctrlc::set_handler(move || {
+        // Todo: handle errors on send
+        let _ = tx2.blocking_send(GameEvent::Exit);
+    })
+    .expect("Error setting Ctrl-C handler");
 
     tokio::spawn(async move {
         ticker(tx0).await;
@@ -77,14 +85,14 @@ pub async fn run() {
 
     let done = false;
     while !done {
-        let element = rx.recv().await.unwrap();
-        match element {
-            GameEvent::Keypress(event) => {
-                state = handle_key(state, &event);
+        let event = rx.recv().await.unwrap();
+        match event {
+            GameEvent::Keypress(reader_event) => {
+                state = handle_key(state, &reader_event);
 
                 // Exit if 'q' or Esc is pressed
-                if event == Event::Key(KeyCode::Esc.into())
-                    || event == Event::Key(KeyCode::Char('q').into())
+                if reader_event == Event::Key(KeyCode::Esc.into())
+                    || reader_event == Event::Key(KeyCode::Char('q').into())
                 {
                     break;
                 }
@@ -98,6 +106,7 @@ pub async fn run() {
                     ui::game_over(&state);
                 }
             }
+            GameEvent::Exit => break,
         }
     }
 
