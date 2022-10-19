@@ -2,25 +2,21 @@ use crate::snake::state::{Direction, State};
 use crate::snake::ui;
 
 use crossterm::event::{Event, EventStream, KeyCode};
-use futures::{FutureExt, StreamExt};
+use futures::StreamExt;
 use rand::Rng;
-use std::sync::Arc;
 use std::time::Duration;
-use tokio::select;
+use tokio::sync::mpsc::{self, Sender};
 use tokio::time;
 use tokio_stream::wrappers::IntervalStream;
 
 const TICK_MS: u64 = 200;
 
+pub enum MyEvent {
+    Tick,
+    Keypress(Event),
+}
+
 fn init(mut state: State) -> State {
-    let done = Arc::clone(&state.done);
-
-    ctrlc::set_handler(move || {
-        let mut val = done.lock().unwrap();
-        *val = true;
-    })
-    .expect("Error setting Ctrl-C handler");
-
     state = ui::init(state);
 
     state = place_snake(state);
@@ -33,20 +29,67 @@ fn finish() {
     ui::finish();
 }
 
+pub async fn ticker(event_channel: Sender<MyEvent>) {
+    let interval = time::interval(Duration::from_millis(TICK_MS));
+    let mut interval_stream = IntervalStream::new(interval);
+
+    let done = false;
+    while !done {
+        interval_stream.next().await;
+        // Todo: handle errors on send
+        let _ = event_channel.send(MyEvent::Tick).await;
+    }
+}
+
+pub async fn keyboard(event_channel: Sender<MyEvent>) {
+    let mut reader = EventStream::new();
+
+    let done = false;
+    while !done {
+        let maybe_event = reader.next().await;
+
+        match maybe_event {
+            Some(Ok(event)) => {
+                // Todo: handle errors on send
+                let _ = event_channel.send(MyEvent::Keypress(event)).await;
+            }
+            Some(Err(e)) => println!("Error: {:?}\r", e),
+            None => break,
+        }
+    }
+}
+
 pub async fn run() {
     let mut state = State::new();
     state = init(state);
     ui::draw_screen(&state);
 
-    let interval = time::interval(Duration::from_millis(TICK_MS));
-    let mut interval_stream = IntervalStream::new(interval);
-    let mut reader = EventStream::new();
+    let (tx0, mut rx) = mpsc::channel(10);
+    let tx1 = tx0.clone();
 
-    while !*state.done.lock().unwrap() {
-        let event = reader.next().fuse();
+    tokio::spawn(async move {
+        ticker(tx0).await;
+    });
 
-        select! {
-            _ = interval_stream.next() => {
+    tokio::spawn(async move {
+        keyboard(tx1).await;
+    });
+
+    let done = false;
+    while !done {
+        let element = rx.recv().await.unwrap();
+        match element {
+            MyEvent::Keypress(event) => {
+                state = handle_key(state, &event);
+
+                // Exit if 'q' or Esc is pressed
+                if event == Event::Key(KeyCode::Esc.into())
+                    || event == Event::Key(KeyCode::Char('q').into())
+                {
+                    break;
+                }
+            }
+            MyEvent::Tick => {
                 if !state.game_over {
                     state = run_turn(state);
                     ui::draw_screen(&state);
@@ -54,23 +97,8 @@ pub async fn run() {
                 if state.game_over {
                     ui::game_over(&state);
                 }
-            },
-            maybe_event = event => {
-                match maybe_event {
-                    Some(Ok(event)) => {
-                        // TODO: could probably filter on event class prior to dispatching the event - all events go down to the handler logic!
-                        state = handle_key(state, &event);
-
-                        // Exit if 'q' or Esc is pressed
-                        if event == Event::Key(KeyCode::Esc.into()) || event == Event::Key(KeyCode::Char('q').into()) {
-                            break;
-                        }
-                    }
-                    Some(Err(e)) => println!("Error: {:?}\r", e),
-                    None => break,
-                }
             }
-        };
+        }
     }
 
     finish();
